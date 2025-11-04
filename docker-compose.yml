@@ -1,0 +1,56 @@
+services:
+  minecraft:
+    image: itzg/minecraft-server:latest
+    container_name: vibecraft-minecraft
+    ports:
+      - "25565:25565"   # Minecraft
+      - "25575:25575"   # RCON
+    environment:
+      EULA: "TRUE"
+      TYPE: "PAPER"
+      VERSION: "1.21.3"
+      MEMORY: "2G"
+
+      # RCON Configuration
+      ENABLE_RCON: "true"
+      RCON_PASSWORD: "${VIBECRAFT_RCON_PASSWORD:-minecraft}"
+      RCON_PORT: 25575
+
+      # Server Configuration
+      MODE: "creative"
+      DIFFICULTY: "peaceful"
+      SPAWN_PROTECTION: 0
+      MAX_PLAYERS: 10
+      LEVEL_TYPE: "flat"
+      ONLINE_MODE: "false"
+
+      # WorldEdit Installation (latest stable version via Modrinth)
+      PLUGINS: |
+        https://cdn.modrinth.com/data/1u6JkXh5/versions/3ISh7ADm/worldedit-bukkit-7.3.17.jar
+
+      # Performance
+      USE_AIKAR_FLAGS: "true"
+
+    volumes:
+      - ./minecraft-data:/data
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # Optional: RCON CLI tool
+  rcon-cli:
+    image: itzg/rcon
+    container_name: vibecraft-rcon-cli
+    environment:
+      RCO_HOST: minecraft
+      RCON_PORT: 25575
+      RCON_PASSWORD: "${VIBECRAFT_RCON_PASSWORD:-minecraft}"
+    depends_on:
+      - minecraft
+    profiles:
+      - tools
+    command: /bin/sh
+
+networks:
+  default:
+    name: vibecraft-network

@@ -1,0 +1,49 @@
+# VibeCraft .gitignore
+
+# Environment files with secrets
+.env
+mcp-server/.env
+.rcon_password
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+mcp-server/venv/
+
+# Minecraft server data
+minecraft-data/
+*.jar
+*.log
+
+# Claude Code generated config (contains passwords)
+claude-code-config.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backups
+*.backup
+*.bak
+world-backup-*.tar.gz
+
+# Reference repos (large, can be re-cloned)
+reference-*/
+
+mcp-server/schematics/*
+
+# adhoc docs used by coding agents
+dev_docs/*

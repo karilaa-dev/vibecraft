@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VibeCraft Pattern Schema",
+  "description": "Schema for building and terrain patterns with layer-by-layer construction instructions",
+  "version": "1.0",
+
+  "definitions": {
+    "pattern": {
+      "type": "object",
+      "required": ["id", "name", "category", "description", "construction_type", "dimensions", "materials"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier (lowercase, underscores)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name for the pattern"
+        },
+        "category": {
+          "type": "string",
+          "description": "Main category",
+          "enum": ["roofing", "facades", "corners", "details", "foundations", "interior", "vegetation", "features", "paths", "decorative"]
+        },
+        "subcategory": {
+          "type": "string",
+          "description": "Sub-category within main category"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Search tags for pattern discovery"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the pattern"
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["easy", "medium", "hard"],
+          "default": "medium"
+        },
+        "dimensions": {
+          "type": "object",
+          "required": ["width", "height", "depth"],
+          "properties": {
+            "width": {"type": "integer", "minimum": 1},
+            "height": {"type": "integer", "minimum": 1},
+            "depth": {"type": "integer", "minimum": 1}
+          }
+        },
+        "center": {
+          "type": "object",
+          "properties": {
+            "x": {"type": "integer"},
+            "z": {"type": "integer"}
+          },
+          "description": "Origin point for centered patterns"
+        },
+        "construction_type": {
+          "type": "string",
+          "enum": ["layer_by_layer", "template", "procedural"],
+          "description": "How the pattern is constructed"
+        },
+        "layers": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/layer"}
+        },
+        "materials": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"},
+          "description": "Material counts (block_name: count)"
+        },
+        "placement_notes": {
+          "type": "string",
+          "description": "Instructions for placing this pattern"
+        },
+        "construction_method": {
+          "type": "string",
+          "description": "Detailed construction methodology"
+        },
+        "variants": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Related pattern IDs (material variants)"
+        },
+        "related_patterns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Complementary pattern IDs"
+        },
+        "scalable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Can this pattern be scaled to different sizes"
+        },
+        "scale_notes": {
+          "type": "string",
+          "description": "Notes on how to scale this pattern"
+        },
+        "use_cases": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "When/where to use this pattern"
+        },
+        "visual_notes": {
+          "type": "string",
+          "description": "Visual appearance description"
+        }
+      }
+    },
+
+    "layer": {
+      "type": "object",
+      "required": ["layer", "y_offset", "blocks"],
+      "properties": {
+        "layer": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Layer index (0 = base/bottom)"
+        },
+        "y_offset": {
+          "type": "integer",
+          "description": "Y position relative to base"
+        },
+        "description": {
+          "type": "string",
+          "description": "What this layer does/represents"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/block"}
+        },
+        "ascii": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "ASCII art visualization of this layer (optional)"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about this layer"
+        }
+      }
+    },
+
+    "block": {
+      "type": "object",
+      "required": ["x", "z", "block"],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "description": "X position (relative to pattern origin)"
+        },
+        "z": {
+          "type": "integer",
+          "description": "Z position (relative to pattern origin)"
+        },
+        "block": {
+          "type": "string",
+          "description": "Block ID with optional block states (e.g., 'oak_stairs[facing=north,half=bottom]')"
+        },
+        "note": {
+          "type": "string",
+          "description": "Note about this specific block placement"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,380 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vibecraft.io/schemas/furniture-layout.json",
+  "title": "Minecraft Furniture Layout Schema",
+  "description": "Schema for machine-actionable furniture blueprints that can be executed with WorldEdit commands",
+  "type": "object",
+  "required": ["name", "id", "category", "bounds", "placements"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the furniture piece",
+      "examples": ["Oak Dining Table", "King Size Bed", "Kitchen Cabinet"]
+    },
+    "id": {
+      "type": "string",
+      "description": "Unique identifier (snake_case)",
+      "pattern": "^[a-z0-9_]+$",
+      "examples": ["oak_dining_table", "king_size_bed", "kitchen_cabinet"]
+    },
+    "category": {
+      "type": "string",
+      "description": "Primary category",
+      "enum": ["bedroom", "kitchen", "living_room", "bathroom", "office", "outdoor", "storage", "decorative", "functional"]
+    },
+    "subcategory": {
+      "type": "string",
+      "description": "Optional subcategory for finer classification",
+      "examples": ["seating", "tables", "storage", "lighting", "appliances"]
+    },
+    "tags": {
+      "type": "array",
+      "description": "Searchable tags for filtering",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["modern", "wood", "large"], ["medieval", "stone", "compact"]]
+    },
+    "origin": {
+      "type": "object",
+      "description": "Reference point and default orientation",
+      "required": ["type", "facing"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["front_left_bottom", "center_bottom", "back_left_bottom"],
+          "description": "Reference point: front_left_bottom = (0,0,0) at front-left-bottom corner"
+        },
+        "facing": {
+          "type": "string",
+          "enum": ["north", "south", "east", "west"],
+          "description": "Default facing direction. north = -Z (forward), east = +X, south = +Z, west = -X"
+        }
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "description": "Bounding box dimensions",
+      "required": ["width", "height", "depth"],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Width in blocks (X-axis, left-to-right)"
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Height in blocks (Y-axis, bottom-to-top)"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Depth in blocks (Z-axis, front-to-back)"
+        }
+      }
+    },
+    "placements": {
+      "type": "array",
+      "description": "Array of block placement instructions",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Single block placement",
+            "required": ["type", "pos", "block"],
+            "properties": {
+              "type": {
+                "const": "block"
+              },
+              "pos": {
+                "$ref": "#/definitions/position"
+              },
+              "block": {
+                "type": "string",
+                "description": "Block ID (with optional namespace)",
+                "examples": ["oak_planks", "minecraft:stone_bricks", "red_wool"]
+              },
+              "state": {
+                "type": "string",
+                "description": "Block state properties in bracket notation",
+                "examples": ["[facing=north,half=bottom]", "[waterlogged=true]"]
+              },
+              "nbt": {
+                "type": "string",
+                "description": "NBT data for block entities (chests, signs, etc.)",
+                "examples": ["{Items:[{Slot:0b,id:\"minecraft:diamond\",Count:1b}]}"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Fill a rectangular region with blocks",
+            "required": ["type", "from", "to", "block"],
+            "properties": {
+              "type": {
+                "const": "fill"
+              },
+              "from": {
+                "$ref": "#/definitions/position"
+              },
+              "to": {
+                "$ref": "#/definitions/position"
+              },
+              "block": {
+                "type": "string",
+                "description": "Block ID to fill with"
+              },
+              "state": {
+                "type": "string",
+                "description": "Block state properties"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Place blocks in a line",
+            "required": ["type", "from", "to", "block"],
+            "properties": {
+              "type": {
+                "const": "line"
+              },
+              "from": {
+                "$ref": "#/definitions/position"
+              },
+              "to": {
+                "$ref": "#/definitions/position"
+              },
+              "block": {
+                "type": "string",
+                "description": "Block ID for the line"
+              },
+              "state": {
+                "type": "string",
+                "description": "Block state properties"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Place a pattern on a horizontal layer",
+            "required": ["type", "y", "pattern"],
+            "properties": {
+              "type": {
+                "const": "layer"
+              },
+              "y": {
+                "type": "integer",
+                "description": "Y-level for the layer (relative to origin)"
+              },
+              "pattern": {
+                "type": "string",
+                "description": "WorldEdit pattern syntax",
+                "examples": ["50%oak_planks,50%spruce_planks", "##wool"]
+              },
+              "bounds": {
+                "type": "object",
+                "description": "Optional bounds for the layer (defaults to full furniture bounds)",
+                "properties": {
+                  "from": {"$ref": "#/definitions/position2d"},
+                  "to": {"$ref": "#/definitions/position2d"}
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "materials": {
+      "type": "object",
+      "description": "Material requirements and counts",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "examples": [
+        {
+          "oak_planks": 6,
+          "oak_stairs": 4,
+          "oak_fence": 4
+        }
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "description": "Design notes, usage tips, or context"
+    },
+    "variants": {
+      "type": "array",
+      "description": "Optional variations of this furniture",
+      "items": {
+        "type": "object",
+        "required": ["name", "id", "changes"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Variant name"
+          },
+          "id": {
+            "type": "string",
+            "description": "Variant ID (parent_id + variant suffix)"
+          },
+          "changes": {
+            "type": "string",
+            "description": "Description of what differs from base version"
+          },
+          "material_overrides": {
+            "type": "object",
+            "description": "Material substitutions for this variant"
+          }
+        }
+      }
+    },
+    "clearance": {
+      "type": "object",
+      "description": "Recommended clearance space around furniture",
+      "properties": {
+        "front": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Blocks needed in front for access"
+        },
+        "back": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Blocks needed behind"
+        },
+        "left": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Blocks needed on left side"
+        },
+        "right": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Blocks needed on right side"
+        },
+        "top": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Blocks needed above"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "description": "Attribution and source information",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["minecraft_wiki", "community", "original"],
+          "description": "Source of the design"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to original source"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "position": {
+      "type": "object",
+      "description": "3D position relative to origin (0,0,0)",
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "description": "X-coordinate (left-to-right, increases eastward)"
+        },
+        "y": {
+          "type": "integer",
+          "description": "Y-coordinate (bottom-to-top, increases upward)"
+        },
+        "z": {
+          "type": "integer",
+          "description": "Z-coordinate (front-to-back, increases southward)"
+        }
+      }
+    },
+    "position2d": {
+      "type": "object",
+      "description": "2D position for layer bounds (X, Z only)",
+      "required": ["x", "z"],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "description": "X-coordinate"
+        },
+        "z": {
+          "type": "integer",
+          "description": "Z-coordinate"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "Simple Oak Table",
+      "id": "simple_oak_table",
+      "category": "living_room",
+      "subcategory": "tables",
+      "tags": ["wood", "compact", "dining"],
+      "origin": {
+        "type": "front_left_bottom",
+        "facing": "north"
+      },
+      "bounds": {
+        "width": 3,
+        "height": 1,
+        "depth": 2
+      },
+      "placements": [
+        {
+          "type": "block",
+          "pos": {"x": 0, "y": 0, "z": 0},
+          "block": "oak_fence"
+        },
+        {
+          "type": "block",
+          "pos": {"x": 2, "y": 0, "z": 0},
+          "block": "oak_fence"
+        },
+        {
+          "type": "block",
+          "pos": {"x": 0, "y": 0, "z": 1},
+          "block": "oak_fence"
+        },
+        {
+          "type": "block",
+          "pos": {"x": 2, "y": 0, "z": 1},
+          "block": "oak_fence"
+        },
+        {
+          "type": "fill",
+          "from": {"x": 0, "y": 1, "z": 0},
+          "to": {"x": 2, "y": 1, "z": 1},
+          "block": "oak_pressure_plate"
+        }
+      ],
+      "materials": {
+        "oak_fence": 4,
+        "oak_pressure_plate": 6
+      },
+      "clearance": {
+        "front": 1,
+        "back": 1,
+        "left": 1,
+        "right": 1,
+        "top": 2
+      },
+      "notes": "Simple table design using fence posts as legs and pressure plates as tabletop. Allows players to walk through.",
+      "source": {
+        "type": "minecraft_wiki",
+        "url": "https://minecraft.wiki/w/Tutorials/Furniture"
+      }
+    }
+  ]
+}

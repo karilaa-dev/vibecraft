@@ -1,0 +1,58 @@
+Last login: Wed Oct 29 11:16:14 on ttys028
+claude%                                                                         er@Evans-MacBook-Pro-3 ~ % claude
+
+╭─── Claude Code v2.0.30 ──────────────────────────────────────────────────────╮
+│                             │ Tips for getting started                       │
+│      Welcome back Even!     │ Run /init to create a CLAUDE.md file with ins… │
+│                             │ Note: You have launched claude in your home d… │
+│          ▗ ▗   ▖ ▖          │ ────────────────────────────────────────────── │
+│                             │ Recent activity                                │
+│            ▘▘ ▝▝            │ 3w ago  run a simple query with the codex mcp… │
+│                             │ /resume for more                               │
+│   Sonnet 4.5 · Claude Max   │                                                │
+│          /Users/er          │                                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+^C%                                                                             er@Evans-MacBook-Pro-3 ~ % ls
+Applications		Documents		Obsidian
+APU_FUN			Downloads		Pictures
+APU_PROJECT		Library			Postman
+backup_1		Movies			Public
+CascadeProjects		Music			Repos
+Desktop			My project		Screen Studio Projects
+er@Evans-MacBook-Pro-3 ~ % cd ..
+er@Evans-MacBook-Pro-3 /Users % ls
+er	Shared
+er@Evans-MacBook-Pro-3 /Users % cd er
+er@Evans-MacBook-Pro-3 ~ % vi .claude.json
+
+
+
+
+
+
+
+    "drag-and-drop-images": 163,
+    "double-esc": 68,
+    "continue": 162,
+    "custom-commands": 153,
+    "shift-tab": 162,
+    "custom-agents": 153,
+    "status-line": 146,
+    "paste-images-mac": 159,
+    "git-worktrees": 164,
+    "image-paste": 162,
+    "plan-mode-for-complex-tasks": 163,
+    "opusplan-mode-reminder": 73,
+    "double-esc-code-restore": 162,
+    "tab-toggle-thinking": 155,
+    "ultrathink-keyword": 163,
+    "ide-upsell-external-terminal": 163
+  },
+  "promptQueueUseCount": 579,
+  "showExpandedTodos": true,
+  "cachedStatsigGates": {
+    "tengu_disable_bypass_permissions_mode": false,
+    "tengu_use_file_checkpoints": true,
+    "tengu_tool_pear": false,
+
