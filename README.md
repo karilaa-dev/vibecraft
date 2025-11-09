@@ -508,12 +508,6 @@ cat mcp-server/.env
 4. Check system prompt is configured (`CLAUDE.md` for Claude Code)
 5. Test RCON: `./scripts/test-connection.sh`
 
-### "Commands fail with validation errors"
-
-- Safety checks are enabled by default
-- Coordinate bounds may be restricting build area
-- Check `mcp-server/.env` for `VIBECRAFT_ENABLE_SAFETY_CHECKS`
-
 ### "WorldEdit says 'You need to provide a world'"
 
 This error occurs when WorldEdit can't determine world context from RCON/console.
@@ -527,18 +521,6 @@ docker restart vibecraft-minecraft
 ```
 
 **Alternative:** Ensure a player is online when running WorldEdit commands. WorldEdit works best when there's an active player to provide world context.
-
-### "Furniture placed in floor or floating"
-
-- AI should automatically use `spatial_awareness_scan` before placement
-- If not, ensure `SYSTEM_PROMPT.md` is configured correctly
-- Manual fix: `//undo` and ask AI to scan before placing
-
-### "Roof stairs stacked vertically"
-
-- AI should scan before each roof layer
-- Ensure spatial awareness is working
-- Check AI is using `spatial_awareness_scan` tool
 
 ### "WorldEdit commands not working"
 
@@ -591,47 +573,6 @@ The automated `setup-all.sh` script handles everything for you. If you prefer ma
 
 **Note:** Manual setup is not recommended for most users. The automated setup is faster, safer, and better tested.
 
-## Future Enhancements
-
-We're actively working on expanding VibeCraft's capabilities. Here's what's on the roadmap:
-
-### 🚀 Coming Soon
-
-- **Visual Builder Interface** - Web UI for visualizing builds before execution
-- **Multi-World Support** - Manage multiple Minecraft worlds from single MCP server
-- **Build History & Versioning** - Save and restore previous build states
-- **Collaborative Building** - Multi-player coordination with shared build queues
-
-### 📋 Planned Features
-
-- **Enhanced Schematic Library** - Pre-built structure collection with automated placement
-- **Advanced Terrain Tools** - Biome-aware generation, erosion simulation, natural features
-- **Style Transfer** - Analyze existing structures and replicate their architectural style
-- **Performance Analytics** - Build metrics, optimization suggestions, resource usage tracking
-- **Plugin Ecosystem** - Support for custom tools and extensions via plugin system
-
-### 💡 Under Consideration
-
-- **Voice Commands** - Natural language building via voice input
-- **Mobile Companion App** - Monitor and control builds from mobile devices
-- **AI Training Mode** - Learn from user corrections to improve future builds
-- **Integration with Other Mods** - Support for Create, Chisel & Bits, and other popular mods
-- **Build Marketplace** - Share and download community-created patterns and templates
-
-### 🎯 How to Contribute Ideas
-
-Have a feature request or idea? We'd love to hear it!
-
-1. **Check existing issues** - Search [open issues](https://github.com/amenti-labs/vibecraft/issues) to see if it's already proposed
-2. **Open a discussion** - Use [GitHub Discussions](https://github.com/amenti-labs/vibecraft/discussions) for broader ideas
-3. **Submit a feature request** - Create an [issue](https://github.com/amenti-labs/vibecraft/issues/new) with the "enhancement" label
-
-**Priority is given to features that:**
-- Improve build quality and AI accuracy
-- Expand creative possibilities
-- Enhance user experience and ease of use
-- Benefit the broader Minecraft building community
-
 ## Contributing
 
 We welcome contributions! Please review:
@@ -648,6 +589,16 @@ We welcome contributions! Please review:
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## Support & Community
+
+Need help or have questions? We're here to support you:
+
+- 📧 **Email**: [evan@amentilabs.com](mailto:evan@amentilabs.com) — Questions, feedback, or to join the community
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/amenti-labs/vibecraft/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/amenti-labs/vibecraft/discussions)
+
+We'd love to hear from you and help you build amazing creations!
 
 ## Credits
 
@@ -677,4 +628,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Happy building!** 🧱
 
-Need help? [Open an issue](https://github.com/amenti-labs/vibecraft/issues) or check the [troubleshooting section](#troubleshooting) above.
+Need help? Check the [Support & Community](#support--community) section above or email [evan@amentilabs.com](mailto:evan@amentilabs.com)
