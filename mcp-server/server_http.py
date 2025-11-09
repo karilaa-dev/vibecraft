@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 VibeCraft MCP Server - HTTP/SSE Wrapper
-Adds HTTP/SSE transport to the original server keeping all 34+ tools intact
+Adds HTTP/SSE transport to the original server keeping all tools intact
 """
 
 import asyncio
@@ -47,7 +47,7 @@ async def run_http_server(host: str = "127.0.0.1", port: int = 8765):
 
     print("\n" + "="*60)
     print("🎮 VibeCraft MCP Server - HTTP/SSE Mode")
-    print("   All 46 tools available")
+    print("   All 45 tools available")
     print("="*60)
 
     # Load configuration
@@ -176,14 +176,9 @@ async def run_http_server(host: str = "127.0.0.1", port: int = 8765):
         async def new_receive():
             return {"type": "http.request", "body": body}
 
-        result = await sse.handle_post_message(request.scope, new_receive, request._send)
-
-        # Return empty response if result is None (which is expected for SSE)
-        if result is None:
-            from starlette.responses import Response
-            return Response(status_code=202)
-
-        return result
+        # handle_post_message sends its own response via request._send
+        # We should NOT return a Response object as it would cause double response
+        await sse.handle_post_message(request.scope, new_receive, request._send)
 
     async def handle_root(request):
         """Root endpoint for discovery"""

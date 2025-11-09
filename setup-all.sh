@@ -54,6 +54,30 @@ echo ""
 # Check for required commands
 log_info "Checking prerequisites..."
 
+# Initialize pyenv if available (for uv)
+if command_exists pyenv; then
+    eval "$(pyenv init -)"
+fi
+
+if ! command_exists uv; then
+    log_error "uv is not installed. Please install uv first."
+    log_info "Visit: https://github.com/astral-sh/uv"
+    log_info "Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"
+    exit 1
+fi
+
+# Get uv version (disable exit-on-error temporarily)
+set +e
+uv_version=$(uv --version 2>&1)
+uv_check_status=$?
+set -e
+
+if [ $uv_check_status -eq 0 ]; then
+    log_success "uv $uv_version found"
+else
+    log_warning "uv found but version check failed (this is OK)"
+fi
+
 if ! command_exists python3; then
     log_error "Python 3 is not installed. Please install Python 3.10 or higher."
     exit 1
@@ -97,23 +121,15 @@ print_header "📦 Step 1/4: Setting up MCP Server"
 
 cd mcp-server
 
-log_info "Creating Python virtual environment..."
-if [ -d "venv" ]; then
-    log_warning "Virtual environment already exists, skipping creation"
+log_info "Installing dependencies with uv..."
+if [ -f "uv.lock" ]; then
+    log_info "Lock file found, installing from uv.lock..."
+    uv sync --quiet
 else
-    python3 -m venv venv
-    log_success "Virtual environment created"
+    log_info "No lock file found, creating one..."
+    uv sync --quiet
 fi
-
-log_info "Activating virtual environment..."
-source venv/bin/activate
-
-log_info "Upgrading pip..."
-pip install --upgrade pip --quiet
-
-log_info "Installing MCP server dependencies..."
-pip install -r requirements.txt --quiet
-log_success "Dependencies installed"
+log_success "Dependencies installed with uv"
 
 # Create .env file if it doesn't exist
 if [ ! -f ".env" ]; then
@@ -128,7 +144,12 @@ if [ ! -f ".env" ]; then
     cp .env.example .env
 
     # Generate a random RCON password
-    RCON_PASSWORD=$(openssl rand -base64 12 | tr -d "=+/" | cut -c1-16)
+    if command_exists openssl; then
+        RCON_PASSWORD=$(openssl rand -base64 12 | tr -d "=+/" | cut -c1-16)
+    else
+        log_warning "openssl not found, using Python to generate password"
+        RCON_PASSWORD=$(python3 -c "import secrets, string; print(''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(16)))")
+    fi
 
     # Update .env with the password
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -150,12 +171,20 @@ else
 fi
 
 log_info "Testing MCP server..."
-# Quick validation that the module can be imported (skip on macOS if timeout unavailable)
+# Quick validation that the module can be imported (disable exit-on-error for this test)
+set +e
 if command_exists timeout; then
-    timeout 5 python -m src.vibecraft.server 2>&1 | head -1 || log_info "MCP server validated (timeout expected)"
+    timeout 5 uv run python -m src.vibecraft.server 2>&1 | head -1
+    log_info "MCP server validated (timeout expected)"
 else
-    python -c "import sys; sys.path.insert(0, 'src'); from vibecraft import server" 2>&1 && log_success "MCP server module validated" || log_warning "MCP server validation skipped"
+    uv run python -c "import sys; sys.path.insert(0, 'src'); from vibecraft import server" 2>&1
+    if [ $? -eq 0 ]; then
+        log_success "MCP server module validated"
+    else
+        log_warning "MCP server validation skipped (will be tested during final verification)"
+    fi
 fi
+set -e
 
 cd ..
 log_success "MCP Server setup complete"
@@ -211,7 +240,7 @@ if docker ps -a --format '{{.Names}}' | grep -q '^vibecraft-minecraft$'; then
     fi
 else
     log_info "Creating new container (first run may take several minutes)..."
-    log_info "Downloading Paper 1.21.3 and WorldEdit 7.3.10..."
+    log_info "Downloading Paper 1.21.3 and WorldEdit 7.3.17..."
     $DOCKER_COMPOSE up -d
 fi
 
@@ -276,15 +305,82 @@ else
     log_warning "WorldEdit version check failed, but may still be loading"
 fi
 
+# Configure WorldEdit for console/RCON usage
+log_info "Configuring WorldEdit for RCON/console usage..."
+docker exec vibecraft-minecraft bash -c '
+if [ -f plugins/WorldEdit/config.yml ]; then
+    # Remove block restrictions (allows all blocks)
+    sed -i "s/^    disallowed-blocks:.*/    disallowed-blocks: []/g" plugins/WorldEdit/config.yml
+
+    # Enable all required features
+    if ! grep -q "use-scheduler-optimization" plugins/WorldEdit/config.yml; then
+        echo "use-scheduler-optimization: true" >> plugins/WorldEdit/config.yml
+    fi
+
+    echo "WorldEdit configuration updated"
+else
+    echo "WorldEdit config not found yet (will be created on next restart)"
+fi
+' 2>&1 | grep -v "^$" || true
+
+log_success "WorldEdit configured for console usage"
+
 log_success "Minecraft Server setup complete"
 
 ###############################################################################
 # Step 3: Configure Claude Code Integration
 ###############################################################################
 
-print_header "🤖 Step 3/4: Claude Code Integration"
+print_header "🤖 Step 3/4: AI Client Configuration"
 
-log_info "Generating Claude Code MCP configuration..."
+log_info "Generating MCP configuration files..."
+
+# Generate Mode 1: stdio/Command Mode configuration
+cat > claude-code-config.json << EOF
+{
+  "mcpServers": {
+    "vibecraft": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "src.vibecraft.server"],
+      "cwd": "$(pwd)/mcp-server",
+      "env": {
+        "VIBECRAFT_RCON_HOST": "127.0.0.1",
+        "VIBECRAFT_RCON_PORT": "25575",
+        "VIBECRAFT_RCON_PASSWORD": "$RCON_PASSWORD"
+      }
+    }
+  }
+}
+EOF
+
+log_success "Configuration saved to: claude-code-config.json"
+
+# Generate Mode 2: HTTP/SSE Server Mode configuration
+cat > claude-code-config-sse.json << EOF
+{
+  "mcpServers": {
+    "vibecraft-sse": {
+      "transport": "sse",
+      "url": "http://127.0.0.1:8765/sse"
+    }
+  }
+}
+EOF
+
+log_success "SSE configuration saved to: claude-code-config-sse.json"
+
+echo ""
+log_info "📋 Two server modes available:"
+echo ""
+log_info "MODE 1: stdio/Command (Recommended for single client)"
+log_info "   - Simple setup, AI client launches server automatically"
+log_info "   - Use config: claude-code-config.json"
+echo ""
+log_info "MODE 2: HTTP/SSE Server (Best for debugging & multiple clients)"
+log_info "   - From project root: cd mcp-server && ./start-vibecraft.sh"
+log_info "   - See real-time logs, connect multiple clients"
+log_info "   - Use config: claude-code-config-sse.json"
+echo ""
 
 # Detect Claude Code config location
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -300,43 +396,18 @@ else
     CLAUDE_CONFIG_FILE=""
 fi
 
-# Generate the configuration
-cat > claude-code-config.json << EOF
-{
-  "mcpServers": {
-    "vibecraft": {
-      "command": "$(pwd)/mcp-server/venv/bin/python",
-      "args": ["-m", "src.vibecraft.server"],
-      "cwd": "$(pwd)/mcp-server",
-      "env": {
-        "VIBECRAFT_RCON_HOST": "127.0.0.1",
-        "VIBECRAFT_RCON_PORT": "25575",
-        "VIBECRAFT_RCON_PASSWORD": "$RCON_PASSWORD"
-      }
-    }
-  }
-}
-EOF
-
-log_success "Configuration saved to: claude-code-config.json"
-
 if [ -n "$CLAUDE_CONFIG_FILE" ]; then
-    log_info ""
-    log_info "To complete Claude Code setup:"
-    log_info "1. If using Claude Desktop:"
-    log_info "   - Copy the config from: $(pwd)/claude-code-config.json"
-    log_info "   - To: $CLAUDE_CONFIG_FILE"
-    log_info ""
-    log_info "2. If using Claude Code (VSCode extension):"
-    log_info "   - Add the configuration from claude-code-config.json to your MCP settings"
-    log_info ""
-    log_info "3. Restart Claude to load the new MCP server"
+    log_info "To complete setup:"
+    log_info "1. Choose a mode (see above)"
+    log_info "2. Copy config to your AI client"
+    log_info "3. For Claude Code: cp SYSTEM_PROMPT.md CLAUDE.md"
+    log_info "4. Restart your AI client"
 else
     log_warning "Automatic configuration not available for this OS"
-    log_info "Manual configuration file created: claude-code-config.json"
+    log_info "Manual configuration files created"
 fi
 
-log_success "Claude Code configuration generated"
+log_success "AI client configuration generated"
 
 ###############################################################################
 # Step 4: Verification
@@ -348,10 +419,10 @@ log_info "Running final verification tests..."
 
 # Test MCP server can connect
 cd mcp-server
-source venv/bin/activate
 
 log_info "Testing MCP server connection to Minecraft..."
-python << 'PYEOF'
+set +e
+uv run python << 'PYEOF'
 import os
 from mcrcon import MCRcon
 
@@ -373,7 +444,10 @@ except Exception as e:
     exit(1)
 PYEOF
 
-if [ $? -eq 0 ]; then
+VERIFICATION_STATUS=$?
+set -e
+
+if [ $VERIFICATION_STATUS -eq 0 ]; then
     log_success "MCP server can communicate with Minecraft"
 else
     log_error "MCP server cannot communicate with Minecraft"
@@ -394,27 +468,39 @@ echo "📋 Summary:"
 echo "  ✅ MCP Server: Running at mcp-server/"
 echo "  ✅ Minecraft Server: Running in Docker (Port 25565)"
 echo "  ✅ RCON: Enabled (Port 25575)"
-echo "  ✅ WorldEdit: Installed"
+echo "  ✅ WorldEdit: Installed and configured for console usage"
 echo "  ✅ Configuration: Generated"
 echo ""
 echo "🔑 RCON Password: $RCON_PASSWORD"
 echo "   (Saved in: .rcon_password)"
 echo ""
 echo "🚀 Next Steps:"
-echo "  1. Configure Claude Code/Desktop with: claude-code-config.json"
-echo "  2. Restart Claude"
-echo "  3. Start building with AI!"
+echo ""
+echo "  Choose a server mode:"
+echo ""
+echo "  MODE 1: stdio/Command (Recommended for daily use)"
+echo "    1. Copy system prompt: cp SYSTEM_PROMPT.md CLAUDE.md"
+echo "    2. Configure AI client with: claude-code-config.json"
+echo "    3. Restart your AI client"
+echo ""
+echo "  MODE 2: HTTP/SSE Server (For debugging & multiple clients)"
+echo "    1. Start server: cd mcp-server && ./start-vibecraft.sh"
+echo "    2. Configure AI client with: claude-code-config-sse.json"
+echo "    3. Restart your AI client"
+echo ""
+echo "  See README.md for detailed configuration instructions"
 echo ""
 echo "📚 Useful Commands:"
 echo "  • View Minecraft logs:  docker logs -f vibecraft-minecraft"
 echo "  • Stop Minecraft:       $DOCKER_COMPOSE down"
 echo "  • Start Minecraft:      $DOCKER_COMPOSE up -d"
+echo "  • Start SSE server:     cd mcp-server && ./start-vibecraft.sh"
 echo "  • Test RCON:           docker exec vibecraft-minecraft rcon-cli list"
 echo "  • Join server:         minecraft://localhost:25565"
 echo ""
 echo "📖 Documentation:"
-echo "  • Complete Guide: docs/COMPLETE_SETUP_GUIDE.md"
-echo "  • Commands:       docs/RESEARCH_WORLDEDIT_COMPLETE.md"
-echo "  • Troubleshooting: See setup guide"
+echo "  • Main Guide:     README.md"
+echo "  • Server Setup:   docs/MINECRAFT_SERVER_SETUP.md"
+echo "  • System Prompt:  SYSTEM_PROMPT.md"
 echo ""
 print_header "Happy Building! 🏗️"

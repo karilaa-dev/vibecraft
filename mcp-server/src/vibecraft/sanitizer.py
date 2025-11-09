@@ -77,11 +77,16 @@ def sanitize_command(
         )
 
     # Check for command injection attempts (chaining with ; or &&)
-    if ";" in sanitized or "&&" in sanitized or "||" in sanitized:
-        return ValidationResult(
-            is_valid=False,
-            error_message="Command chaining is not allowed (found ';', '&&', or '||')",
-        )
+    # BUT: WorldEdit expression commands (//generate, //deform) legitimately use &&, ||, <, >
+    worldedit_expression_commands = ["generate", "deform", "calc"]
+    is_expression_command = any(sanitized.startswith(cmd) for cmd in worldedit_expression_commands)
+
+    if not is_expression_command:
+        if ";" in sanitized or "&&" in sanitized or "||" in sanitized:
+            return ValidationResult(
+                is_valid=False,
+                error_message="Command chaining is not allowed (found ';', '&&', or '||')",
+            )
 
     # Check for dangerous commands if safety is enabled
     if not allow_dangerous:

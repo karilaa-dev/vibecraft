@@ -204,7 +204,7 @@ COMMON_WORKFLOWS = """# Common WorldEdit Workflows
 PLAYER_CONTEXT_WARNING = """
 ⚠️ IMPORTANT: Player Context Commands
 
-Some WorldEdit commands require a player context and may not work from console/RCON:
+Some WorldEdit navigation commands require a player to be logged in and looking at blocks:
 - //jumpto - Teleport to block you're looking at
 - //thru - Pass through walls
 - //ascend / //descend - Move up/down through floors
@@ -212,12 +212,13 @@ Some WorldEdit commands require a player context and may not work from console/R
 - Navigation wands and tools
 
 **Workarounds:**
-- Use coordinate-based commands instead: //pos1 X,Y,Z
+- Use coordinate-based commands: /pos1 X,Y,Z and /pos2 X,Y,Z
 - Use vanilla /tp for teleportation
-- For selections, always specify coordinates explicitly
-- Some commands can work with `execute as @p run <command>`
+- For selections, specify coordinates explicitly
 
 **From Console (RCON):**
-✅ Works: //pos1 100,64,100 ; //set stone ; //copy ; //paste
-❌ May Fail: //hpos1 ; //jumpto ; //thru
+✅ Works: /pos1 100,64,100 ; /pos2 200,100,200 ; /set stone ; /copy ; /paste
+❌ Requires Player: /hpos1 ; /jumpto ; /thru ; /ascend ; /descend
+
+Note: World context is automatically set - you can use all coordinate-based WorldEdit commands from RCON.
 """

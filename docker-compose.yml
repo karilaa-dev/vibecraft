@@ -37,20 +37,6 @@ services:
     stdin_open: true
     tty: true
 
-  # Optional: RCON CLI tool
-  rcon-cli:
-    image: itzg/rcon
-    container_name: vibecraft-rcon-cli
-    environment:
-      RCO_HOST: minecraft
-      RCON_PORT: 25575
-      RCON_PASSWORD: "${VIBECRAFT_RCON_PASSWORD:-minecraft}"
-    depends_on:
-      - minecraft
-    profiles:
-      - tools
-    command: /bin/sh
-
 networks:
   default:
     name: vibecraft-network

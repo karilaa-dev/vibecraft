@@ -20,6 +20,7 @@ VibeCraft is a Model Context Protocol (MCP) server that exposes ALL WorldEdit co
 
 ### Prerequisites
 
+- uv - Fast Python package manager ([install](https://github.com/astral-sh/uv))
 - Python 3.10 or higher
 - Minecraft server with WorldEdit and RCON enabled
 - Claude Code, Claude Desktop, or another MCP-compatible client
@@ -27,16 +28,11 @@ VibeCraft is a Model Context Protocol (MCP) server that exposes ALL WorldEdit co
 ### Installation
 
 ```bash
-# Clone the repository
-cd /Users/er/Repos/vibecraft/mcp-server
+# Clone the repository and navigate to mcp-server directory
+cd <VIBECRAFT_ROOT>/mcp-server
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On macOS/Linux
-# OR: venv\Scripts\activate  # On Windows
-
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies with uv (automatically manages Python environment)
+uv sync
 ```
 
 ### Configuration
@@ -71,11 +67,9 @@ VIBECRAFT_ENABLE_COMMAND_LOGGING=true
 ### Test the Server
 
 ```bash
-# Activate virtual environment if not already active
-source venv/bin/activate
-
 # Run the server directly (for testing)
-python -m src.vibecraft.server
+# uv automatically manages the Python environment
+uv run python -m src.vibecraft.server
 ```
 
 The server will connect to your Minecraft server and verify WorldEdit is installed.
@@ -90,9 +84,9 @@ Add to your Claude Code MCP configuration:
 {
   "mcpServers": {
     "vibecraft": {
-      "command": "python",
-      "args": ["-m", "src.vibecraft.server"],
-      "cwd": "/Users/er/Repos/vibecraft/mcp-server",
+      "command": "uv",
+      "args": ["run", "python", "-m", "src.vibecraft.server"],
+      "cwd": "<VIBECRAFT_ROOT>/mcp-server",
       "env": {
         "VIBECRAFT_RCON_HOST": "127.0.0.1",
         "VIBECRAFT_RCON_PORT": "25575",
@@ -113,9 +107,9 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
 {
   "mcpServers": {
     "vibecraft": {
-      "command": "/Users/er/Repos/vibecraft/mcp-server/venv/bin/python",
-      "args": ["-m", "src.vibecraft.server"],
-      "cwd": "/Users/er/Repos/vibecraft/mcp-server",
+      "command": "uv",
+      "args": ["run", "python", "-m", "src.vibecraft.server"],
+      "cwd": "<VIBECRAFT_ROOT>/mcp-server",
       "env": {
         "VIBECRAFT_RCON_HOST": "127.0.0.1",
         "VIBECRAFT_RCON_PORT": "25575",
@@ -136,9 +130,9 @@ Edit `.cursor/mcp.json` in your project:
 {
   "mcpServers": {
     "vibecraft": {
-      "command": "python",
-      "args": ["-m", "src.vibecraft.server"],
-      "cwd": "/Users/er/Repos/vibecraft/mcp-server",
+      "command": "uv",
+      "args": ["run", "python", "-m", "src.vibecraft.server"],
+      "cwd": "<VIBECRAFT_ROOT>/mcp-server",
       "env": {
         "VIBECRAFT_RCON_HOST": "127.0.0.1",
         "VIBECRAFT_RCON_PORT": "25575",
@@ -173,12 +167,19 @@ VibeCraft provides three tiers of tools:
 - `worldedit_scripting` - CraftScript execution helpers
 - `worldedit_reference` - Search and help index commands
 - `worldedit_tools` - Tool binding, super pickaxe, and brush configuration
+- `worldedit_deform` - Mathematical terrain deformations (//deform expressions)
+- `worldedit_vegetation` - Flora and forest generation (//flora, //forest, /tool tree)
+- `worldedit_terrain_advanced` - Advanced terrain (//caves, //ore, //regen)
+- `worldedit_analysis` - Block distribution and calculations (//distr, //calc)
 
 ### Tier 3: Helper Utilities
 - `validate_pattern` - Validate WorldEdit patterns
 - `validate_mask` - Validate WorldEdit masks
 - `get_server_info` - Get server status and info
 - `calculate_region_size` - Calculate region dimensions and block count
+- `search_minecraft_item` - Find blocks by name (1,375 items from Minecraft 1.21.3)
+- `get_player_position` - Get player coordinates, rotation, target block, ground level
+- `get_surface_level` - Find ground Y-coordinate at X,Z position
 
 ## Example Usage with AI
 
@@ -252,27 +253,27 @@ VibeCraft provides built-in documentation resources that AI can access:
 ### Running Tests
 
 ```bash
-# Install dev dependencies
-pip install -r requirements-dev.txt
+# Install dev dependencies (includes test tools)
+uv sync --all-extras
 
-# Run tests
-pytest
+# Run tests with uv
+uv run pytest
 
 # Run with coverage
-pytest --cov=src/vibecraft --cov-report=html
+uv run pytest --cov=src/vibecraft --cov-report=html
 ```
 
 ### Code Quality
 
 ```bash
 # Format code
-black src/
+uv run black src/
 
 # Lint code
-ruff check src/
+uv run ruff check src/
 
 # Type checking
-mypy src/
+uv run mypy src/
 ```
 
 ## Architecture
@@ -306,6 +307,92 @@ Future enhancements planned:
 - [ ] Multi-server support
 - [ ] Web UI for monitoring and management
 
+## Recent Improvements
+
+See `CLEANUP_COMPLETE.md` for details on recent cleanup work:
+- ✅ **FIXED**: Updated system prompt with correct `spatial_awareness_scan` tool
+- ✅ **FIXED**: Cleaned 15 dead imports from server.py (40% reduction in import section)
+
+All documentation is now accurate and imports are clean. No known issues.
+
+## Future Improvements
+
+### ⚠️ HISTORICAL NOTE: Schematic Library System (REMOVED)
+
+> **Status**: This feature was previously implemented but **REMOVED** to simplify the codebase.
+> **Current Alternative**: Use `worldedit_schematic` tool for basic schematic operations.
+> **This documentation is kept for historical reference and potential future re-implementation.**
+
+A schematic library system was previously implemented but removed to simplify the codebase. This functionality can be re-added in the future with the following features:
+
+#### Planned Features
+
+**Schematic Management Tool** (`schematic_library`):
+- **List** - Browse available `.schem` files in a repository directory
+- **Info** - Inspect schematic metadata (dimensions, block count, offset)
+- **Prepare** - Copy schematics to WorldEdit's schematics folder
+- **Load** - Automatically load schematics into WorldEdit's clipboard
+
+#### Implementation Details
+
+The system would:
+1. Store `.schem` files in a `schemas/` directory in the project root
+2. Use `nbtlib` to read NBT metadata from schematic files
+3. Copy files to the Minecraft server's WorldEdit schematics folder
+4. Execute `//schem load` commands via RCON to load into clipboard
+5. Integrate with WorldEdit's native clipboard commands for pasting
+
+#### Example Workflow
+
+```
+1. schematic_library(action="list")
+   → Shows available schematics with dimensions and status
+
+2. schematic_library(action="load", name="modern_villa_1")
+   → Copies to server, loads into clipboard
+
+3. worldedit_clipboard(command="paste -a -o")
+   → Pastes the loaded schematic at current location
+```
+
+#### Files Removed
+
+- `schematic_manager.py` - NBT parsing and file management utilities
+- Tool handler in `tools/core_tools.py` - Schematic library tool implementation
+- Tool definition in `server.py` - MCP tool schema and description
+
+#### Why Removed
+
+- Added complexity with NBT file handling dependencies
+- Limited use case (WorldEdit's native `/schem` commands work fine)
+- File system access can be restricted on some servers
+- Better as an optional plugin or separate utility
+
+#### When to Re-Add
+
+Consider re-implementing when:
+- Users need managed schematic repositories with metadata
+- Integration with schematic marketplaces/libraries is desired
+- Preview functionality before placing is required
+- Version control for schematics becomes necessary
+- Team collaboration on schematic collections is needed
+
+#### Alternative Approach
+
+Instead of a custom library, users can:
+- Use WorldEdit's native `/schem` commands via `worldedit_schematic` tool
+- Manually copy `.schem` files to server's schematics folder
+- Use file management tools to organize schematics
+- Access schematics via server file system if available
+
+#### Resources Available
+
+The `schemas/` directory at project root contains example schematics:
+- `modern_villa_1.schem` - Modern villa design
+- `modern_villa_2.schem` - Alternative villa layout
+
+These can serve as references for future implementation.
+
 ## Contributing
 
 Contributions welcome! Please see our contributing guidelines.
@@ -323,8 +410,8 @@ MIT License - see LICENSE file for details
 ## Support
 
 - 📖 [Full Documentation](../docs/)
-- 🐛 [Report Issues](https://github.com/your-repo/vibecraft/issues)
-- 💬 [Discussions](https://github.com/your-repo/vibecraft/discussions)
+- 🐛 [Report Issues](https://github.com/amenti-labs/vibecraft/issues)
+- 💬 [Discussions](https://github.com/amenti-labs/vibecraft/discussions)
 
 ---
 

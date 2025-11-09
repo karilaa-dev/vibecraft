@@ -1,5 +1,0 @@
-mcp>=1.0.0
-mcrcon>=0.7.0
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-nbtlib>=2.0.0

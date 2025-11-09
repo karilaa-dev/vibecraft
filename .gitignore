@@ -23,6 +23,11 @@ minecraft-data/
 
 # Claude Code generated config (contains passwords)
 claude-code-config.json
+claude-code-config-sse.json
+.mcp.json
+
+# Auto-generated system prompt (copy of SYSTEM_PROMPT.md)
+CLAUDE.md
 
 # OS files
 .DS_Store
@@ -45,5 +50,12 @@ reference-*/
 
 mcp-server/schematics/*
 
+# Adhoc documentation from development chat sessions (local only)
+.adhoc_docs/
+
 # adhoc docs used by coding agents
 dev_docs/*
+
+toon/*
+
+minecraft-server/*
