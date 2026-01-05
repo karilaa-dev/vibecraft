@@ -2,7 +2,7 @@
 
 ## What Was Done
 
-Successfully converted Minecraft 1.21.11 items database to token-efficient TOON format and created a Python playground for analysis.
+Successfully converted Minecraft 1.21.3 items database to token-efficient TOON format and created a Python playground for analysis.
 
 ## Files Created
 
@@ -267,6 +267,6 @@ Successfully created a token-efficient Minecraft items database using TOON forma
 ---
 
 **Created**: October 31, 2025
-**Minecraft Version**: 1.21.11
+**Minecraft Version**: 1.21.3
 **Items Count**: 1,375
 **Format**: TOON (Token-Oriented Object Notation)
